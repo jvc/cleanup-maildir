@@ -1,0 +1,11 @@
+The cleanup-maildir py script floating around on the net did not work
+with a host I read mail on that runs python 2.5.2. I patched it, then
+a week later realized that , then realized I also read mail on a box
+that only has python 2.4. So this now works with both.
+
+Note that using 'INBOX' refers to your root maildir (~/Maildir)
+
+Example usage:
+
+cleanup-maildir -d 1 --age=120 --archive-folder=Archive archive INBOX
+cleanup-maildir -d 1 --age=90 --archive-folder=Archive.src archive src
