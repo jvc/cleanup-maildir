@@ -45,7 +45,7 @@ OPTIONS
       the year, 2 is year/month (default), 3 is year/month/day.
   --maildir-root=F
       Specifies folder that contains mail folders.
-      Default is "$HOME/Maildir".
+      Default is '$HOME/Maildir'.
   --folder-seperator=str
       Folder hierarchy seperator.  Default is '.'
   --folder-prefix=str
@@ -57,7 +57,7 @@ NOTES
 
 EXAMPLES
   # Archive messages in 'Sent Items' folder over 30 days old
-  cleanup-maildir --age=30 archive 'Sent Items'" 
+  cleanup-maildir --age=30 archive 'Sent Items'
 
   # Delete messages over 2 weeks old in 'Lists/debian-devel' folder,
   # except messages that are part of a thread containing a flagged message.
@@ -87,6 +87,11 @@ def mkMaildir(path):
     os.mkdir(os.path.join(path, 'new'), 0700)
     os.mkdir(os.path.join(path, 'cur'), 0700)
 
+def get_flname(obj):
+    if sys.version_info[0] <= 2 and sys.version_info[1] < 5:
+        return obj.name
+    else:
+        return obj._file.name
 
 class MaildirWriter(object):
 
@@ -119,7 +124,7 @@ class MaildirWriter(object):
         if self.path == None or not os.path.isdir(self.path):
             raise ValueError, 'Path does not exist'
         tryCount = 1
-        srcFile = msg.fp._file.name;
+        srcFile = get_flname(msg.fp)
         (dstName, tmpFile, newFile, dstFile) = (None, None, None, None)
         while 1:
             try:
@@ -177,14 +182,14 @@ class MaildirMessage(rfc822.Message):
     def isFlagged(self):
         """return true if the message is flagged as important"""
         import re
-        fname = self.fp._file.name
+        fname = get_flname(self.fp)
         if re.search(r':.*F', fname) != None:
             return True
         return False
 
     def getFlags(self):
         """return the flag part of the message's filename"""
-        parts = self.fp._file.name.split(':')
+        parts = get_flname(self.fp).split(':')
         if len(parts) == 2:
             return parts[1]
         return None
@@ -193,7 +198,7 @@ class MaildirMessage(rfc822.Message):
         """return true if the message is marked as unread"""
         # XXX should really be called isUnread
         import re
-        fname = self.fp._file.name
+        fname = get_flname(self.fp)
         if re.search(r':.*S', fname) != None:
             return False
         return True
@@ -244,7 +249,7 @@ class MaildirMessage(rfc822.Message):
     def getDateRecd(self):
         """Get the time the message was received"""
         # XXX check that stat returns time in UTC, fix if not
-        return os.stat(self.fp._file.name)[8]
+        return os.stat(get_flname(self.fp))[8]
 
     def getDateSentOrRecd(self):
         """Get the time the message was sent, fall back on time received"""
@@ -342,7 +347,6 @@ class MaildirCleaner(object):
                 archiveFolder = ""
             else:
                 archiveFolder = folderName
-
         if (folderName == 'INBOX'):
             path = self.folderBase
         else:
@@ -366,12 +370,12 @@ class MaildirCleaner(object):
                                  (fakeMsg, i), msg)
                         if not self.isTrialRun:
                             self.trashWriter.deliver(msg)
-                            os.unlink(msg.fp._file.name)
+                            os.unlink(get_flname(msg.fp))
                     elif mode == 'delete':
                         self.log(logging.INFO, "%sDeleting #%d (old)" % 
                                  (fakeMsg, i), msg)
                         if not self.isTrialRun:
-                            os.unlink(msg.fp._file.name)
+                            os.unlink(get_flname(msg.fp))
                     else: # mode == 'archive'
                         # Determine subfolder path
                         mdate = time.gmtime(msg.getDateSentOrRecd())
@@ -394,7 +398,7 @@ class MaildirCleaner(object):
                                 mkMaildir(sfPath)
                             # Deliver
                             self.__mdWriter.deliver(msg, sfPath)
-                            os.unlink(msg.fp._file.name)
+                            os.unlink(get_flname(msg.fp))
                     self.stats[mode] += 1
                 else:
                     self.log(logging.DEBUG, "Keeping #%d (fresh)" % i, msg)
@@ -502,3 +506,4 @@ logger.info('Total messages:     %5d' % cleaner.stats['total'])
 logger.info('Affected messages:  %5d' % cleaner.stats[mode])
 logger.info('Untouched messages: %5d' %
             (cleaner.stats['total'] - cleaner.stats[mode]))
+ 
