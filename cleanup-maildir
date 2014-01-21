@@ -209,6 +209,9 @@ class MaildirMessage(rfc822.Message):
         import email.Header
         s = self.getheader("Subject")
         try:
+            # fix broken unicode subject lines http://bugs.python.org/issue10574#msg122776
+            if s:
+                s = s.replace('?==?', '?= =?')
             return u"".join(map(lambda x: x[0].decode(x[1] or 'ASCII', 'replace'),
                                 email.Header.decode_header(s)))
         except(LookupError):
